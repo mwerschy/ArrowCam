@@ -1,0 +1,16 @@
+[
+{
+  "modid": "arrowcam",
+  "name": "Arrow Camera",
+  "description": "Watch your arrows fly!",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authors": ["ShadowBlade50"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
