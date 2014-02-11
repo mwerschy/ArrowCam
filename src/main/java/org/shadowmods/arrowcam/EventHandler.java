@@ -15,14 +15,15 @@ public class EventHandler {
     @SubscribeEvent
     public void onEntityJoinWorld(EntityJoinWorldEvent event) {
         EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
-
         if (!isRunningClient()) return;
-        if (event.entity instanceof EntityArrow && player.isSneaking()) {
+
+        ArrowCam.isActive = ArrowCam.keyStartCam.getIsKeyPressed();
+        if (event.entity instanceof EntityArrow && ArrowCam.isActive) {
             EntityArrow arrow = (EntityArrow) event.entity;
             EntityPlayer arrowShooter = arrow.worldObj.getClosestPlayerToEntity(arrow, 10);
             if (arrowShooter == null) return;
 
-            if (player.getDisplayName() == arrowShooter.getDisplayName()) {
+            if (player.getDisplayName().equals(arrowShooter.getDisplayName())) {
                 EntityCamera.getInstance().startCam(arrow, true);
             }
         }
@@ -31,8 +32,8 @@ public class EventHandler {
     @SubscribeEvent
     public void onLivingAttack(LivingAttackEvent event) {
         if (!isRunningClient()) return;
-        if (event.source.getDamageType().equals("arrow")) {
-            EntityCamera.getInstance().startCam(event.entity);
+        if (event.source.getDamageType().equals("arrow") && ArrowCam.isActive) {
+            EntityCamera.getInstance().startCam(event.entity, false, ArrowCam.entityCamMaxLife);
         }
     }
 
@@ -44,6 +45,6 @@ public class EventHandler {
     private boolean isRunningClient() {
         Side side = FMLCommonHandler.instance().getEffectiveSide();
         EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
-        return (side == Side.CLIENT) && (player != null);
+        return (side.isClient()) && (player != null);
     }
 }

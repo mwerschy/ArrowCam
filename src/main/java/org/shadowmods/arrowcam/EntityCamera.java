@@ -1,14 +1,16 @@
 package org.shadowmods.arrowcam;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class EntityCamera extends EntityLiving {
     private static EntityCamera instance;
     private Entity target;
-    private boolean enabled, invert;
+    private boolean enabled, invert, isReturning;
     private int maxLife, despawnDelay;
 
     private boolean hideGUI;
@@ -37,7 +39,7 @@ public class EntityCamera extends EntityLiving {
     }
 
     public void startCam(Entity target, boolean invert) {
-        startCam(target, invert, 120);
+        startCam(target, invert, ArrowCam.camMaxLife);
     }
 
     public void startCam(Entity target, boolean invert, int maxLife) {
@@ -46,13 +48,18 @@ public class EntityCamera extends EntityLiving {
 
     public void startCam(Entity target, boolean invert, int maxLife, int despawnDelay) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (enabled) stopCam();
-        enabled = true;
+        stopCam();
 
         hideGUI = mc.gameSettings.hideGUI;
         fovSetting = mc.gameSettings.fovSetting;
         thirdPersonView = mc.gameSettings.thirdPersonView;
 
+        mc.gameSettings.hideGUI = true;
+        mc.gameSettings.thirdPersonView = 1;
+        mc.renderViewEntity = this;
+
+        enabled = true;
+        isReturning = false;
         this.target = target;
         this.invert = invert;
         this.maxLife = maxLife;
@@ -65,22 +72,20 @@ public class EntityCamera extends EntityLiving {
         setRotation(mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch);
 
         doCameraMove();
-
-        mc.gameSettings.hideGUI = true;
-        mc.gameSettings.thirdPersonView = 1;
-        mc.renderViewEntity = this;
     }
 
     public void stopCam() {
         Minecraft mc = Minecraft.getMinecraft();
+        if (worldObj != null) worldObj.removeEntity(this);
+
         if (!enabled) return;
         enabled = false;
+        isReturning = false;
 
         mc.gameSettings.hideGUI = hideGUI;
         mc.gameSettings.fovSetting = fovSetting;
         mc.gameSettings.thirdPersonView = thirdPersonView;
         mc.renderViewEntity = mc.thePlayer;
-        worldObj.removeEntity(this);
     }
 
     private void doCameraMove() {
@@ -107,18 +112,40 @@ public class EntityCamera extends EntityLiving {
         setRotation(yaw, pitch);
     }
 
+    private void setIsReturning() {
+        double oldPosX = posX;
+        double oldPosY = posY;
+        double oldPosZ = posZ;
+        float oldYaw = rotationYaw;
+        float oldPitch = rotationPitch;
+        startCam(Minecraft.getMinecraft().thePlayer, false, 20);
+        setPosition(oldPosX, oldPosY, oldPosZ);
+        setRotation(oldYaw, oldPitch);
+        isReturning = true;
+    }
+
     @Override
     public void onEntityUpdate() {
         super.onEntityUpdate();
 
         if (!enabled) return;
 
-        if (!Minecraft.getMinecraft().thePlayer.isSneaking()) {
-            stopCam();
-            return;
+        if (target.isDead && target instanceof EntityArrow) target.isDead = false;
+
+        if (!ArrowCam.isActive && !isReturning) {
+            if (ArrowCam.animReturn && target != Minecraft.getMinecraft().thePlayer) {
+                setIsReturning();
+            } else {
+                stopCam();
+                return;
+            }
         } else if (maxLife < 0 || despawnDelay < 0) {
-            stopCam();
-            return;
+            if (ArrowCam.animReturn && target != Minecraft.getMinecraft().thePlayer) {
+                setIsReturning();
+            } else {
+                stopCam();
+                return;
+            }
         } else if (target.isDead) {
             --despawnDelay;
             return;
@@ -126,9 +153,21 @@ public class EntityCamera extends EntityLiving {
             --maxLife;
         }
 
+        if (isReturning) {
+            EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+            if (Math.abs(posX - player.posX) < 1 &&
+                    Math.abs(posY - player.posY) < 1 &&
+                    Math.abs(posZ - player.posZ) < 1) {
+                isReturning = false;
+                stopCam();
+            }
+        }
+
         doCameraMove();
 
         motionX = motionY = motionZ = 0;
+
+        ArrowCam.isActive = ArrowCam.keyStartCam.getIsKeyPressed();
     }
 
     @Override
