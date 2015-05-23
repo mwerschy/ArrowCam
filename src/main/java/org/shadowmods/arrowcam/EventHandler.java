@@ -1,23 +1,22 @@
 package org.shadowmods.arrowcam;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.relauncher.Side;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
 
 public class EventHandler {
 
     @SubscribeEvent
     public void onEntityJoinWorld(EntityJoinWorldEvent event) {
-        EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         if (!isRunningClient()) return;
 
-        ArrowCam.isActive = ArrowCam.keyStartCam.getIsKeyPressed();
+        ArrowCam.isActive = ArrowCam.keyStartCam.isKeyDown();
         if (event.entity instanceof EntityArrow && ArrowCam.isActive) {
             EntityArrow arrow = (EntityArrow) event.entity;
             EntityPlayer arrowShooter = arrow.worldObj.getClosestPlayerToEntity(arrow, 10);
@@ -44,7 +43,7 @@ public class EventHandler {
      */
     private boolean isRunningClient() {
         Side side = FMLCommonHandler.instance().getEffectiveSide();
-        EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         return (side.isClient()) && (player != null);
     }
 }

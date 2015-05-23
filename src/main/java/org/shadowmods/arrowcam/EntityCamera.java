@@ -1,11 +1,12 @@
 package org.shadowmods.arrowcam;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.DamageSource;
 
 public class EntityCamera extends EntityLiving {
     private static EntityCamera instance;
@@ -24,7 +25,7 @@ public class EntityCamera extends EntityLiving {
         super(null);
 
         setSize(0.0F, 0.0F);
-        yOffset = 0.0F;
+        // yOffset = 0.0F;
     }
 
     public static EntityCamera getInstance() {
@@ -56,7 +57,7 @@ public class EntityCamera extends EntityLiving {
 
         mc.gameSettings.hideGUI = true;
         mc.gameSettings.thirdPersonView = 1;
-        mc.renderViewEntity = this;
+        mc.setRenderViewEntity(this);
 
         enabled = true;
         isReturning = false;
@@ -85,7 +86,7 @@ public class EntityCamera extends EntityLiving {
         mc.gameSettings.hideGUI = hideGUI;
         mc.gameSettings.fovSetting = fovSetting;
         mc.gameSettings.thirdPersonView = thirdPersonView;
-        mc.renderViewEntity = mc.thePlayer;
+        mc.setRenderViewEntity(mc.thePlayer);
     }
 
     private void doCameraMove() {
@@ -154,7 +155,7 @@ public class EntityCamera extends EntityLiving {
         }
 
         if (isReturning) {
-            EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+            EntityPlayer player = Minecraft.getMinecraft().thePlayer;
             if (Math.abs(posX - player.posX) < 1 &&
                     Math.abs(posY - player.posY) < 1 &&
                     Math.abs(posZ - player.posZ) < 1) {
@@ -167,11 +168,11 @@ public class EntityCamera extends EntityLiving {
 
         motionX = motionY = motionZ = 0;
 
-        ArrowCam.isActive = ArrowCam.keyStartCam.getIsKeyPressed();
+        ArrowCam.isActive = ArrowCam.keyStartCam.isKeyDown();
     }
 
     @Override
-    public boolean isEntityInvulnerable() {
+    public boolean isEntityInvulnerable(DamageSource damageSource) {
         return true;
     }
 
